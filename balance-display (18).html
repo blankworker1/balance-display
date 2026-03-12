@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BALANCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #ffffff;
+    --black: #111111;
+    --mid:   #888888;
+    --fade:  5000ms;
+    --ease:  cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--white);
+    color: var(--black);
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    cursor: none;
+  }
+  button { cursor: pointer; }
+
+  /* SPLASH */
+  #splash {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    opacity: 1;
+    transition: opacity var(--fade) var(--ease);
+  }
+  #splash.hidden { opacity: 0; pointer-events: none; }
+
+  .splash-title {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 300;
+    font-size: min(20vw, 38vh);
+    letter-spacing: 0.04em;
+    color: var(--black);
+    text-transform: uppercase;
+    user-select: none;
+    line-height: 1;
+    text-align: center;
+    padding: 0 2vw;
+    width: 100%;
+  }
+  .splash-sub {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(14px, 4vw, 38px);
+    color: var(--mid);
+    letter-spacing: 0.12em;
+    text-align: center;
+    position: absolute;
+    bottom: 25%;
+    left: 0; right: 0;
+  }
+
+  /* TIP DETAIL */
+  #tipdetail {
+    position: absolute; inset: 0;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--fade) var(--ease);
+  }
+  #tipdetail.visible { opacity: 1; pointer-events: all; }
+
+  .tip-block {
+    position: absolute;
+    left:  clamp(48px, 9vw, 120px);
+    right: clamp(48px, 9vw, 120px);
+    display: flex; flex-direction: column;
+    gap: clamp(10px, 2vw, 24px);
+  }
+  .tip-block.top    { top:    clamp(80px, 13vw, 160px); }
+  .tip-block.bottom { bottom: clamp(80px, 13vw, 160px); }
+
+  .tip-amount {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 300;
+    font-size: min(22vw, 34vh);
+    line-height: 0.88;
+    letter-spacing: -0.01em;
+    color: var(--black);
+  }
+  .tip-amount-unit {
+    font-size: 0.24em; font-weight: 400;
+    letter-spacing: 0.18em; color: var(--mid);
+    text-transform: uppercase;
+    vertical-align: middle; margin-left: 0.4em;
+  }
+  .tip-artwork {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 400;
+    font-size: clamp(18px, 4.5vw, 48px);
+    color: var(--black); letter-spacing: 0.03em;
+  }
+  .tip-memo {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 300; font-style: italic;
+    font-size: clamp(15px, 3.5vw, 36px);
+    color: var(--mid); line-height: 1.55;
+    max-width: 34ch;
+  }
+
+  /* POWERED BY BLINK */
+  .powered-by {
+    position: fixed; bottom: 1rem;
+    left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(8px, 1.5vw, 16px);
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--fade) var(--ease);
+  }
+  .powered-by.visible { opacity: 1; }
+  .powered-by-label {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 300;
+    font-size: clamp(10px, 2vw, 17px);
+    color: var(--mid); letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .blink-logo { height: clamp(16px, 3.2vw, 28px); width: auto; display: block; }
+
+  /* TEST BUTTONS */
+  .test-buttons {
+    position: fixed; top: 1.5rem; left: 0; right: 0;
+    display: flex; justify-content: center;
+    gap: clamp(12px, 3vw, 32px); z-index: 100;
+  }
+  .test-btn {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(10px, 2vw, 14px); font-weight: 400;
+    letter-spacing: 0.12em; color: #cccccc;
+    border: 1px solid #e0e0e0; background: transparent;
+    padding: 0.6em 1.6em; cursor: pointer; text-transform: uppercase;
+    transition: all 0.25s; -webkit-tap-highlight-color: transparent;
+  }
+  .test-btn:hover, .test-btn:active { color: var(--white); background: var(--black); border-color: var(--black); }
+
+  /* LOADING */
+  #loading {
+    position: fixed; inset: 0; background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; transition: opacity 2s ease;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  .loading-word {
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(40px, 14vw, 160px); letter-spacing: 0.1em;
+    text-transform: uppercase; color: #dddddd;
+    animation: breathe 2.5s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  /* ERROR */
+  .error-badge {
+    position: fixed; bottom: 1rem; left: 1.5rem;
+    font-size: 11px; letter-spacing: 0.08em; color: #cc4444; display: none;
+  }
+
+  /* ── SETTINGS OVERLAY ── */
+  #settings-overlay {
+    position: fixed; inset: 0;
+    background: rgba(255,255,255,0.97);
+    z-index: 300;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  #settings-overlay.visible { opacity: 1; pointer-events: all; }
+
+  /* PIN screen */
+  #bal-pin-screen {
+    width: min(72vw, 72vh);
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #bal-settings-screen {
+    width: min(82vw, 72vh);
+    display: none; flex-direction: column; align-items: center;
+  }
+
+  .bal-overlay-title {
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(14px, 3vw, 28px);
+    letter-spacing: 0.38em; color: rgba(0,0,0,0.25);
+    margin-bottom: 8%;
+  }
+
+  #bal-pin-dots { display: flex; gap: 6%; margin-bottom: 4%; }
+  .bal-pin-dot {
+    width: clamp(12px, 2.5vw, 22px); height: clamp(12px, 2.5vw, 22px);
+    border-radius: 50%; border: 1px solid rgba(0,0,0,0.2);
+    background: transparent; transition: background 0.12s;
+  }
+  .bal-pin-dot.filled { background: rgba(0,0,0,0.75); }
+
+  #bal-pin-error {
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(9px, 1.5vw, 15px); letter-spacing: 0.14em;
+    color: rgba(200,60,60,0.7); height: 1.4em; margin-bottom: 6%;
+    text-align: center;
+  }
+
+  #bal-pin-pad {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 3%; width: 100%;
+  }
+  .bal-pin-key {
+    aspect-ratio: 1;
+    background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(16px, 3.5vw, 38px); color: rgba(0,0,0,0.65);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s; user-select: none;
+  }
+  .bal-pin-key:active { background: rgba(0,0,0,0.1); }
+  .bal-pin-key.wide {
+    grid-column: span 2; aspect-ratio: auto; padding: 5% 0;
+    font-size: clamp(10px, 2vw, 20px); letter-spacing: 0.15em;
+  }
+
+  /* Settings panel */
+  .bal-settings-title {
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(12px, 2.5vw, 24px); letter-spacing: 0.38em;
+    color: rgba(0,0,0,0.25); margin-bottom: 6%; width: 100%; text-align: center;
+  }
+  .bal-setting-row { width: 100%; margin-bottom: 4%; }
+  .bal-setting-label {
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(8px, 1.2vw, 14px); letter-spacing: 0.22em;
+    color: rgba(0,0,0,0.3); margin-bottom: 2%;
+  }
+  .bal-setting-input, .bal-setting-textarea {
+    background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 4px;
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(9px, 1.4vw, 18px); color: rgba(0,0,0,0.75);
+    padding: 3% 4%; width: 100%; outline: none; letter-spacing: 0.04em;
+  }
+  .bal-setting-input:focus, .bal-setting-textarea:focus { border-color: rgba(0,0,0,0.28); }
+  .bal-setting-textarea {
+    resize: none; height: clamp(80px, 18vh, 220px);
+    font-size: clamp(8px, 1.1vw, 14px); line-height: 1.5;
+    font-family: 'Courier New', monospace;
+  }
+  .bal-json-hint {
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(7px, 1vw, 12px); letter-spacing: 0.08em;
+    color: rgba(0,0,0,0.25); margin-top: 1.5%; line-height: 1.5;
+  }
+  #bal-json-status {
+    font-size: clamp(7px, 1vw, 13px); letter-spacing: 0.1em;
+    height: 1.4em; margin-top: 1%; color: rgba(0,120,60,0.7);
+  }
+
+  .bal-settings-divider { width: 100%; border: none; border-top: 1px solid rgba(0,0,0,0.07); margin: 3% 0; }
+
+  .bal-settings-actions { display: flex; gap: 3%; width: 100%; margin-top: 2%; }
+  .bal-btn-action {
+    flex: 1; padding: 4% 0;
+    background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 4px;
+    font-family: 'Nunito', sans-serif; font-weight: 300;
+    font-size: clamp(8px, 1.2vw, 16px); color: rgba(0,0,0,0.5);
+    letter-spacing: 0.14em; cursor: pointer;
+    transition: background 0.12s; text-align: center;
+  }
+  .bal-btn-action:active { background: rgba(0,0,0,0.09); color: rgba(0,0,0,0.85); }
+  .bal-btn-action.danger { border-color: rgba(200,60,60,0.25); color: rgba(200,60,60,0.55); }
+  .bal-btn-action.danger:active { background: rgba(200,60,60,0.07); }
+</style>
+</head>
+<body>
+
+<script>
+// ── CONFIG — loaded from localStorage, falls back to hardcoded placeholders ──
+const STORED_ARTWORKS    = localStorage.getItem('balance_artworks');
+const STORED_POLL        = localStorage.getItem('balance_poll');
+
+const CONFIG = {
+  BLINK_API:     'https://api.blink.sv/graphql',
+  POLL_INTERVAL: STORED_POLL ? parseInt(STORED_POLL) : 10000,
+  BASE_HOLD_MS:  8000,
+  MS_PER_CHAR:   80,
+  ARTWORKS: STORED_ARTWORKS ? JSON.parse(STORED_ARTWORKS) : [
+    { name: "Open Secret 1",  apiKey: "PASTE_API_KEY_1",  walletId: "PASTE_WALLET_ID_1"  },
+    { name: "Open Secret 2",  apiKey: "PASTE_API_KEY_2",  walletId: "PASTE_WALLET_ID_2"  },
+    { name: "Open Secret 3",  apiKey: "PASTE_API_KEY_3",  walletId: "PASTE_WALLET_ID_3"  },
+    { name: "Open Secret 4",  apiKey: "PASTE_API_KEY_4",  walletId: "PASTE_WALLET_ID_4"  },
+    { name: "Open Secret 5",  apiKey: "PASTE_API_KEY_5",  walletId: "PASTE_WALLET_ID_5"  },
+    { name: "Open Secret 6",  apiKey: "PASTE_API_KEY_6",  walletId: "PASTE_WALLET_ID_6"  },
+    { name: "Open Secret 7",  apiKey: "PASTE_API_KEY_7",  walletId: "PASTE_WALLET_ID_7"  },
+    { name: "Open Secret 8",  apiKey: "PASTE_API_KEY_8",  walletId: "PASTE_WALLET_ID_8"  },
+    { name: "Open Secret 9",  apiKey: "PASTE_API_KEY_9",  walletId: "PASTE_WALLET_ID_9"  },
+    { name: "Open Secret 10", apiKey: "PASTE_API_KEY_10", walletId: "PASTE_WALLET_ID_10" },
+    { name: "Open Secret 11", apiKey: "PASTE_API_KEY_11", walletId: "PASTE_WALLET_ID_11" },
+    { name: "Open Secret 12", apiKey: "PASTE_API_KEY_12", walletId: "PASTE_WALLET_ID_12" },
+    { name: "Open Secret 13", apiKey: "PASTE_API_KEY_13", walletId: "PASTE_WALLET_ID_13" },
+    { name: "Open Secret 14", apiKey: "PASTE_API_KEY_14", walletId: "PASTE_WALLET_ID_14" },
+    { name: "Open Secret 15", apiKey: "PASTE_API_KEY_15", walletId: "PASTE_WALLET_ID_15" },
+    { name: "Open Secret 16", apiKey: "PASTE_API_KEY_16", walletId: "PASTE_WALLET_ID_16" },
+    { name: "Open Secret 17", apiKey: "PASTE_API_KEY_17", walletId: "PASTE_WALLET_ID_17" },
+    { name: "Open Secret 18", apiKey: "PASTE_API_KEY_18", walletId: "PASTE_WALLET_ID_18" },
+    { name: "Open Secret 19", apiKey: "PASTE_API_KEY_19", walletId: "PASTE_WALLET_ID_19" },
+    { name: "Open Secret 20", apiKey: "PASTE_API_KEY_20", walletId: "PASTE_WALLET_ID_20" },
+    { name: "Open Secret 21", apiKey: "PASTE_API_KEY_21", walletId: "PASTE_WALLET_ID_21" },
+  ]
+};
+</script>
+
+<!-- Loading -->
+<div id="loading"><div class="loading-word">Balance</div></div>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="splash-title">Balance</div>
+  <div class="splash-sub">Tip the Art</div>
+</div>
+
+<!-- Tip detail -->
+<div id="tipdetail">
+  <div class="tip-block top" id="tip-block">
+    <div class="tip-amount" id="td-amount"></div>
+    <div class="tip-artwork" id="td-artwork"></div>
+    <div class="tip-memo" id="td-memo"></div>
+  </div>
+</div>
+
+<!-- Powered by Blink -->
+<div class="powered-by" id="powered-by">
+  <span class="powered-by-label">powered by</span>
+  <svg class="blink-logo" viewBox="0 0 120 32" xmlns="http://www.w3.org/2000/svg" aria-label="Blink">
+    <defs>
+      <linearGradient id="blinkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#FFB32C"/>
+        <stop offset="100%" stop-color="#FB5607"/>
+      </linearGradient>
+    </defs>
+    <polygon points="18,2 8,18 15,18 12,30 24,12 17,12" fill="url(#blinkGrad)"/>
+    <text x="32" y="24" font-family="'Ubuntu','Nunito',sans-serif" font-weight="700"
+      font-style="italic" font-size="22" fill="url(#blinkGrad)" letter-spacing="0.5">BLINK</text>
+  </svg>
+</div>
+
+<!-- Test buttons — remove before event -->
+<div class="test-buttons">
+  <button class="test-btn" onclick="simulateTip(100)">100 sats</button>
+  <button class="test-btn" onclick="simulateTip(500)">500 sats</button>
+  <button class="test-btn" onclick="simulateTip(1000)">1000 sats</button>
+</div>
+
+<div class="error-badge" id="error-badge">⚠ API error</div>
+
+<!-- Settings overlay — triggered by triple-tap on "Tip the Art" -->
+<div id="settings-overlay">
+
+  <!-- PIN screen -->
+  <div id="bal-pin-screen">
+    <div class="bal-overlay-title">BALANCE</div>
+    <div id="bal-pin-dots">
+      <div class="bal-pin-dot" id="bpd0"></div>
+      <div class="bal-pin-dot" id="bpd1"></div>
+      <div class="bal-pin-dot" id="bpd2"></div>
+      <div class="bal-pin-dot" id="bpd3"></div>
+    </div>
+    <div id="bal-pin-error"></div>
+    <div id="bal-pin-pad">
+      <div class="bal-pin-key" data-k="1">1</div>
+      <div class="bal-pin-key" data-k="2">2</div>
+      <div class="bal-pin-key" data-k="3">3</div>
+      <div class="bal-pin-key" data-k="4">4</div>
+      <div class="bal-pin-key" data-k="5">5</div>
+      <div class="bal-pin-key" data-k="6">6</div>
+      <div class="bal-pin-key" data-k="7">7</div>
+      <div class="bal-pin-key" data-k="8">8</div>
+      <div class="bal-pin-key" data-k="9">9</div>
+      <div class="bal-pin-key wide" data-k="del">DEL</div>
+      <div class="bal-pin-key" data-k="0">0</div>
+    </div>
+  </div>
+
+  <!-- Settings panel -->
+  <div id="bal-settings-screen">
+    <div class="bal-settings-title">SETTINGS</div>
+
+    <div class="bal-setting-row">
+      <div class="bal-setting-label">ARTWORK CONFIG — paste JSON array</div>
+      <textarea class="bal-setting-textarea" id="bal-cfg-artworks" placeholder='[{"name":"Open Secret 1","apiKey":"...","walletId":"..."},...]' spellcheck="false"></textarea>
+      <div class="bal-json-hint">Array of objects: name, apiKey, walletId — one per artwork</div>
+      <div id="bal-json-status"></div>
+    </div>
+
+    <hr class="bal-settings-divider">
+
+    <div class="bal-setting-row">
+      <div class="bal-setting-label">POLL INTERVAL (seconds)</div>
+      <input class="bal-setting-input" id="bal-cfg-poll" type="number" value="10" min="5" max="60">
+    </div>
+
+    <hr class="bal-settings-divider">
+
+    <div class="bal-settings-actions">
+      <div class="bal-btn-action danger" id="bal-btn-clear-config">CLEAR CONFIG</div>
+      <div class="bal-btn-action" id="bal-btn-validate">VALIDATE</div>
+      <div class="bal-btn-action" id="bal-btn-save">SAVE</div>
+      <div class="bal-btn-action" id="bal-btn-close">CLOSE</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+const state = { balances: {}, loaded: false };
+let positionToggle  = false;
+let sequenceRunning = false;
+let queuedTip       = null;
+
+// ── BLINK API ──────────────────────────────────────────────
+const TX_QUERY = `
+  query GetTransactions($walletId: WalletId!, $first: Int!) {
+    me { defaultAccount { walletById(walletId: $walletId) {
+      transactions(first: $first) { edges { node { id status direction settlementAmount memo } } }
+    } } }
+  }
+`;
+
+async function fetchWalletData(artwork) {
+  const headers = { 'Content-Type': 'application/json', 'X-API-KEY': artwork.apiKey };
+  const [balRes, txRes] = await Promise.all([
+    fetch(CONFIG.BLINK_API, { method: 'POST', headers,
+      body: JSON.stringify({ query: `query { me { defaultAccount { wallets { id balance } } } }` }) }),
+    fetch(CONFIG.BLINK_API, { method: 'POST', headers,
+      body: JSON.stringify({ query: TX_QUERY, variables: { walletId: artwork.walletId, first: 3 } }) })
+  ]);
+  const balData = await balRes.json();
+  const txData  = await txRes.json();
+  let balance = 0;
+  const wallets = balData?.data?.me?.defaultAccount?.wallets || [];
+  const w = wallets.find(w => w.id === artwork.walletId);
+  if (w) balance = w.balance;
+  const edges = txData?.data?.me?.defaultAccount?.walletById?.transactions?.edges || [];
+  const latestMemo = edges.map(e => e.node).filter(t => t.status === 'SUCCESS' && t.direction === 'RECEIVE')[0]?.memo || '';
+  return { balance, latestMemo };
+}
+
+async function pollAll() {
+  let anyError = false;
+  const results = await Promise.allSettled(
+    CONFIG.ARTWORKS.map(a => fetchWalletData(a).then(r => ({ artwork: a, ...r })))
+  );
+  results.forEach(result => {
+    if (result.status === 'fulfilled') {
+      const { artwork, balance, latestMemo } = result.value;
+      const prev = state.balances[artwork.walletId] ?? null;
+      if (prev !== null && balance > prev)
+        revealOnTip({ amount: balance - prev, artwork: artwork.name, comment: latestMemo });
+      state.balances[artwork.walletId] = balance;
+    } else { anyError = true; }
+  });
+  document.getElementById('error-badge').style.display = anyError ? 'block' : 'none';
+  if (!state.loaded) { state.loaded = true; document.getElementById('loading').classList.add('hidden'); }
+}
+
+// ── SEQUENCE ───────────────────────────────────────────────
+const FADE_MS = 5000;
+function holdDuration(comment) { return CONFIG.BASE_HOLD_MS + (comment ? comment.length * CONFIG.MS_PER_CHAR : 0); }
+function revealOnTip(tip) { if (sequenceRunning) { queuedTip = tip; return; } runSequence(tip); }
+
+function runSequence(tip) {
+  sequenceRunning = true; queuedTip = null;
+  const splash = document.getElementById('splash');
+  const detail = document.getElementById('tipdetail');
+  const block  = document.getElementById('tip-block');
+  const powBy  = document.getElementById('powered-by');
+  const hold   = holdDuration(tip.comment);
+  positionToggle = !positionToggle;
+  block.className = 'tip-block ' + (positionToggle ? 'bottom' : 'top');
+  document.getElementById('td-amount').innerHTML =
+    `${tip.amount.toLocaleString('en-US', {useGrouping: false})}<span class="tip-amount-unit">sats</span>`;
+  document.getElementById('td-artwork').textContent = tip.artwork;
+  const memoEl = document.getElementById('td-memo');
+  if (tip.comment) { memoEl.textContent = `"${tip.comment}"`; memoEl.style.display = ''; }
+  else { memoEl.style.display = 'none'; }
+  splash.classList.add('hidden');
+  detail.classList.add('visible');
+  powBy.classList.add('visible');
+  setTimeout(() => {
+    detail.classList.remove('visible');
+    powBy.classList.remove('visible');
+    setTimeout(() => {
+      splash.classList.remove('hidden');
+      setTimeout(() => {
+        sequenceRunning = false;
+        if (queuedTip) { const next = queuedTip; queuedTip = null; runSequence(next); }
+      }, FADE_MS);
+    }, FADE_MS * 0.5);
+  }, FADE_MS + hold);
+}
+
+// ── TEST — remove before event ─────────────────────────────
+const TEST_ARTWORKS = ['Open Secret 1','Open Secret 3','Open Secret 5','Open Secret 7','Open Secret 9','Open Secret 12'];
+let testCount = 0;
+function simulateTip(amount) {
+  const artwork = TEST_ARTWORKS[testCount % TEST_ARTWORKS.length]; testCount++;
+  const memos = ['Beautiful work','This really moved me','','Thank you for making this','Incredible — I keep coming back to it','','Something I will not forget'];
+  revealOnTip({ amount, artwork, comment: memos[testCount % memos.length] });
+}
+
+// ── SETTINGS OVERLAY ───────────────────────────────────────
+const CORRECT_PIN = '1928';
+let balPinEntry = '';
+
+// Triple-tap on "Tip the Art" subtitle
+const splashSub = document.querySelector('.splash-sub');
+let subTapCount = 0, subTapTimer = null;
+splashSub.style.cursor = 'default';
+splashSub.addEventListener('click', () => {
+  subTapCount++;
+  clearTimeout(subTapTimer);
+  subTapTimer = setTimeout(() => { subTapCount = 0; }, 600);
+  if (subTapCount >= 3) { subTapCount = 0; openBalOverlay(); }
+});
+
+function openBalOverlay() {
+  balPinEntry = '';
+  updateBalPinDots();
+  document.getElementById('bal-pin-error').textContent = '';
+  document.getElementById('bal-pin-screen').style.display = 'flex';
+  document.getElementById('bal-settings-screen').style.display = 'none';
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+
+function closeBalOverlay() {
+  document.getElementById('settings-overlay').classList.remove('visible');
+}
+
+function updateBalPinDots() {
+  for (let i = 0; i < 4; i++)
+    document.getElementById('bpd' + i).classList.toggle('filled', i < balPinEntry.length);
+}
+
+document.getElementById('bal-pin-pad').addEventListener('click', e => {
+  const key = e.target.closest('.bal-pin-key');
+  if (!key) return;
+  const k = key.dataset.k;
+  if (k === 'del') { balPinEntry = balPinEntry.slice(0, -1); document.getElementById('bal-pin-error').textContent = ''; }
+  else if (balPinEntry.length < 4) balPinEntry += k;
+  updateBalPinDots();
+  if (balPinEntry.length === 4) {
+    if (balPinEntry === CORRECT_PIN) {
+      // Load current config into fields
+      const stored = localStorage.getItem('balance_artworks');
+      document.getElementById('bal-cfg-artworks').value = stored
+        ? JSON.stringify(JSON.parse(stored), null, 2)
+        : JSON.stringify(CONFIG.ARTWORKS, null, 2);
+      document.getElementById('bal-cfg-poll').value = CONFIG.POLL_INTERVAL / 1000;
+      document.getElementById('bal-json-status').textContent = '';
+      document.getElementById('bal-pin-screen').style.display = 'none';
+      document.getElementById('bal-settings-screen').style.display = 'flex';
+    } else {
+      document.getElementById('bal-pin-error').textContent = 'incorrect';
+      balPinEntry = ''; updateBalPinDots();
+    }
+  }
+});
+
+// Validate JSON
+document.getElementById('bal-btn-validate').addEventListener('click', () => {
+  const raw = document.getElementById('bal-cfg-artworks').value.trim();
+  const statusEl = document.getElementById('bal-json-status');
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('must be an array');
+    const bad = parsed.filter(a => !a.name || !a.apiKey || !a.walletId);
+    if (bad.length > 0) throw new Error(`${bad.length} item(s) missing name/apiKey/walletId`);
+    statusEl.style.color = 'rgba(0,140,60,0.7)';
+    statusEl.textContent = `✓ valid — ${parsed.length} artworks`;
+  } catch(e) {
+    statusEl.style.color = 'rgba(200,60,60,0.7)';
+    statusEl.textContent = `✗ ${e.message}`;
+  }
+});
+
+// Save
+document.getElementById('bal-btn-save').addEventListener('click', () => {
+  const raw = document.getElementById('bal-cfg-artworks').value.trim();
+  const statusEl = document.getElementById('bal-json-status');
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('must be an array');
+    localStorage.setItem('balance_artworks', JSON.stringify(parsed));
+    localStorage.setItem('balance_poll', document.getElementById('bal-cfg-poll').value);
+    statusEl.style.color = 'rgba(0,140,60,0.7)';
+    statusEl.textContent = `✓ saved — reload to apply`;
+  } catch(e) {
+    statusEl.style.color = 'rgba(200,60,60,0.7)';
+    statusEl.textContent = `✗ invalid JSON — not saved`;
+  }
+});
+
+// Clear config
+document.getElementById('bal-btn-clear-config').addEventListener('click', () => {
+  if (confirm('Remove saved artwork config? Placeholders will be used until you re-enter config.')) {
+    localStorage.removeItem('balance_artworks');
+    localStorage.removeItem('balance_poll');
+    closeBalOverlay();
+  }
+});
+
+// Close
+document.getElementById('bal-btn-close').addEventListener('click', closeBalOverlay);
+
+// ── BOOT ───────────────────────────────────────────────────
+pollAll();
+setInterval(pollAll, CONFIG.POLL_INTERVAL);
+</script>
+</body>
+</html>
