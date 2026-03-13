@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BALANCE — Display</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    background: #0a0a0a;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  /* Slide track — 3 iframes side by side, slides horizontally */
+  #track {
+    display: flex;
+    width: 300vw;
+    height: 100vh;
+    transition: transform 0.7s cubic-bezier(0.77, 0, 0.175, 1);
+  }
+
+  #track iframe {
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    flex-shrink: 0;
+  }
+
+  /* Progress dots — bottom center */
+  #dots {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+  }
+
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.4s, transform 0.4s;
+  }
+  .dot.active {
+    background: rgba(255,255,255,0.7);
+    transform: scale(1.3);
+  }
+
+  /* Countdown arc — thin ring around active dot */
+  #timer-ring {
+    position: fixed;
+    bottom: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 101;
+    pointer-events: none;
+    transition: left 0.7s cubic-bezier(0.77,0,0.175,1);
+  }
+
+  #timer-ring svg {
+    overflow: visible;
+  }
+
+  /* Discreet tap zone — top right corner */
+  #tap-zone {
+    position: fixed;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    z-index: 200;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* PIN overlay */
+  .pin-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95); z-index: 600;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .pin-overlay.active { display: flex; }
+
+  .pin-box {
+    background: #111; border: 1px solid rgba(255,255,255,0.1);
+    padding: 40px; text-align: center; width: 300px;
+  }
+  .pin-title {
+    font-size: 9px; letter-spacing: 0.5em;
+    color: rgba(255,255,255,0.2); text-transform: uppercase; margin-bottom: 24px;
+  }
+  .pin-display {
+    font-family: 'Nunito', sans-serif; font-size: 40px; font-weight: 300;
+    color: rgba(255,255,255,0.8); letter-spacing: 0.3em;
+    min-height: 50px; margin-bottom: 20px;
+  }
+  .pin-error { font-size: 10px; color: rgba(255,100,80,0.8); letter-spacing: 0.2em; min-height: 16px; margin-bottom: 14px; }
+  .pin-pad { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .pin-key {
+    font-family: 'Nunito', sans-serif; font-size: 16px; padding: 14px;
+    background: none; border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.6); cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pin-key:active { background: rgba(255,255,255,0.1); }
+  .pin-key.clr { color: rgba(255,255,255,0.25); }
+
+  /* Settings overlay */
+  .settings-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .settings-overlay.active { display: flex; }
+
+  .settings-box {
+    background: #111; border: 1px solid rgba(255,255,255,0.1);
+    padding: 36px 40px; width: 440px; max-width: 92vw;
+  }
+  .settings-title {
+    font-size: 9px; letter-spacing: 0.5em;
+    color: rgba(255,255,255,0.25); text-transform: uppercase; margin-bottom: 28px;
+  }
+  .settings-section {
+    font-size: 9px; letter-spacing: 0.4em;
+    color: rgba(255,255,255,0.15); text-transform: uppercase;
+    margin: 20px 0 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .settings-row label {
+    font-size: 11px; color: rgba(255,255,255,0.45); letter-spacing: 0.1em;
+  }
+  .settings-row input[type="number"] {
+    width: 90px; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.75);
+    font-family: 'Nunito', sans-serif; font-size: 13px;
+    padding: 8px 12px; outline: none; text-align: right;
+    transition: border-color 0.2s;
+  }
+  .settings-row input[type="number"]:focus { border-color: rgba(255,255,255,0.3); }
+  .settings-row .unit-label {
+    font-size: 10px; color: rgba(255,255,255,0.2);
+    margin-left: 8px; letter-spacing: 0.1em;
+  }
+  .settings-row-inner { display: flex; align-items: center; }
+
+  .settings-hint { font-size: 9px; color: rgba(255,255,255,0.15); letter-spacing: 0.1em; margin-top: 4px; }
+
+  .settings-field { margin-bottom: 14px; }
+  .settings-field label {
+    display: block; font-size: 9px; letter-spacing: 0.35em;
+    color: rgba(255,255,255,0.2); text-transform: uppercase; margin-bottom: 8px;
+  }
+  .settings-field input[type="text"],
+  .settings-field input[type="password"] {
+    width: 100%; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.75);
+    font-family: 'Nunito', sans-serif; font-size: 12px;
+    padding: 8px 12px; outline: none; transition: border-color 0.2s;
+  }
+  .settings-field input:focus { border-color: rgba(255,255,255,0.3); }
+  .settings-field input::placeholder { color: rgba(255,255,255,0.15); }
+
+  .settings-actions { display: flex; gap: 10px; margin-top: 28px; }
+  .btn {
+    font-family: 'Nunito', sans-serif; font-size: 9px; letter-spacing: 0.35em;
+    text-transform: uppercase; padding: 11px 20px;
+    cursor: pointer; border: 1px solid; background: none; transition: all 0.2s;
+  }
+  .btn-primary { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); }
+  .btn-primary:active { background: rgba(255,255,255,0.08); }
+  .btn-secondary { border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<!-- Slide track -->
+<div id="track">
+  <iframe id="frame-hub"     src="" title="Hub Display"></iframe>
+  <iframe id="frame-atm"     src="" title="ATM Dashboard"></iframe>
+  <iframe id="frame-balance" src="" title="Balance Display"></iframe>
+</div>
+
+<!-- Progress dots -->
+<div id="dots">
+  <div class="dot active" id="dot-0"></div>
+  <div class="dot"        id="dot-1"></div>
+  <div class="dot"        id="dot-2"></div>
+</div>
+
+<!-- Countdown ring SVG -->
+<div id="timer-ring">
+  <svg width="19" height="19" viewBox="0 0 19 19">
+    <circle cx="9.5" cy="9.5" r="8" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+    <circle id="ring-progress" cx="9.5" cy="9.5" r="8" fill="none"
+      stroke="rgba(255,255,255,0.55)" stroke-width="1.5"
+      stroke-dasharray="50.27" stroke-dashoffset="0"
+      stroke-linecap="round"
+      transform="rotate(-90 9.5 9.5)"/>
+  </svg>
+</div>
+
+<!-- Discreet tap zone top-right -->
+<div id="tap-zone" onclick="openPin()"></div>
+
+<!-- PIN -->
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-box">
+    <div class="pin-title">Rotator Settings</div>
+    <div class="pin-display" id="pinDisplay">____</div>
+    <div class="pin-error" id="pinError"></div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key clr" onclick="pinClear()">Clr</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key clr" onclick="pinCancel()">×</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-box">
+    <div class="settings-title">Rotator Configuration</div>
+
+    <div class="settings-section">Display URLs</div>
+    <div class="settings-field">
+      <label>Hub Display URL</label>
+      <input type="text" id="urlHub" placeholder="e.g. hub-display.html" />
+    </div>
+    <div class="settings-field">
+      <label>ATM Dashboard URL</label>
+      <input type="text" id="urlAtm" placeholder="e.g. atm-dashboard.html" />
+    </div>
+    <div class="settings-field">
+      <label>Balance Display URL</label>
+      <input type="text" id="urlBalance" placeholder="e.g. balance-display.html" />
+    </div>
+
+    <div class="settings-section">Display Duration</div>
+    <div class="settings-row">
+      <label>Hub</label>
+      <div class="settings-row-inner">
+        <input type="number" id="durHub" value="30" min="5" max="300" />
+        <span class="unit-label">sec</span>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>ATM Dashboard</label>
+      <div class="settings-row-inner">
+        <input type="number" id="durAtm" value="30" min="5" max="300" />
+        <span class="unit-label">sec</span>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>Balance</label>
+      <div class="settings-row-inner">
+        <input type="number" id="durBalance" value="30" min="5" max="300" />
+        <span class="unit-label">sec</span>
+      </div>
+    </div>
+
+    <div class="settings-actions">
+      <button class="btn btn-primary" onclick="saveSettings()">Save + Start</button>
+      <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var PIN = '1928';
+  var pinBuffer = '';
+
+  // Defaults
+  var SLIDES = [
+    { id: 'frame-hub',     urlKey: 'rot_url_hub',     durKey: 'rot_dur_hub',     dotId: 'dot-0', defaultDur: 30 },
+    { id: 'frame-atm',     urlKey: 'rot_url_atm',     durKey: 'rot_dur_atm',     dotId: 'dot-1', defaultDur: 30 },
+    { id: 'frame-balance', urlKey: 'rot_url_balance',  durKey: 'rot_dur_balance', dotId: 'dot-2', defaultDur: 30 }
+  ];
+
+  var current = 0;
+  var slideTimer = null;
+  var ringTimer = null;
+  var ringStart = null;
+  var currentDur = 30000;
+
+  // Load saved URLs and durations
+  function loadSettings() {
+    SLIDES.forEach(function(s) {
+      var url = localStorage.getItem(s.urlKey) || '';
+      var dur = parseInt(localStorage.getItem(s.durKey)) || s.defaultDur;
+      s.url = url;
+      s.dur = dur;
+      if (url) document.getElementById(s.id).src = url;
+    });
+  }
+
+  function goTo(idx, direction) {
+    var track = document.getElementById('track');
+    // Slide direction: next = slide left, prev = slide right
+    track.style.transform = 'translateX(-' + (idx * 100) + 'vw)';
+
+    // Update dots
+    SLIDES.forEach(function(s, i) {
+      document.getElementById(s.dotId).classList.toggle('active', i === idx);
+    });
+
+    // Move ring to active dot
+    positionRing(idx);
+
+    current = idx;
+    scheduleNext();
+  }
+
+  function positionRing(idx) {
+    var ring = document.getElementById('timer-ring');
+    // dots container is centered; each dot is 5px + 8px gap
+    // ring sits over active dot
+    var dotSpacing = 13; // 5px dot + 8px gap
+    var totalWidth = SLIDES.length * 5 + (SLIDES.length - 1) * 8;
+    var offsetFromCenter = (idx - (SLIDES.length - 1) / 2) * dotSpacing;
+    ring.style.left = 'calc(50% + ' + offsetFromCenter + 'px)';
+  }
+
+  function scheduleNext() {
+    clearTimeout(slideTimer);
+    cancelAnimationFrame(ringTimer);
+
+    currentDur = SLIDES[current].dur * 1000;
+    startRing(currentDur);
+
+    slideTimer = setTimeout(function() {
+      var next = (current + 1) % SLIDES.length;
+      goTo(next);
+    }, currentDur);
+  }
+
+  // Countdown ring animation
+  var CIRCUMFERENCE = 2 * Math.PI * 8; // r=8 → 50.27
+
+  function startRing(duration) {
+    var ring = document.getElementById('ring-progress');
+    ringStart = performance.now();
+
+    function tick(now) {
+      var elapsed = now - ringStart;
+      var pct = Math.min(elapsed / duration, 1);
+      // dashoffset goes from 0 (full) to circumference (empty)
+      ring.style.strokeDashoffset = (CIRCUMFERENCE * pct).toFixed(2);
+      if (pct < 1) {
+        ringTimer = requestAnimationFrame(tick);
+      }
+    }
+    ringTimer = requestAnimationFrame(tick);
+  }
+
+  // Init
+  loadSettings();
+  positionRing(0);
+
+  var hasUrls = SLIDES.some(function(s) { return s.url; });
+  if (hasUrls) {
+    scheduleNext();
+  } else {
+    openPin();
+  }
+
+  // PIN
+  function openPin() {
+    pinBuffer = '';
+    document.getElementById('pinDisplay').textContent = '____';
+    document.getElementById('pinError').textContent = '';
+    document.getElementById('pinOverlay').classList.add('active');
+  }
+
+  function pinKey(d) {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += d;
+    document.getElementById('pinDisplay').textContent = pinBuffer.replace(/./g,'*').padEnd(4,'_');
+    if (pinBuffer.length === 4) setTimeout(checkPin, 200);
+  }
+
+  function pinClear() {
+    pinBuffer = '';
+    document.getElementById('pinDisplay').textContent = '____';
+    document.getElementById('pinError').textContent = '';
+  }
+
+  function pinCancel() {
+    pinBuffer = '';
+    document.getElementById('pinOverlay').classList.remove('active');
+    // Resume rotation if already configured
+    if (SLIDES.some(function(s) { return s.url; })) scheduleNext();
+  }
+
+  function checkPin() {
+    if (pinBuffer === PIN) {
+      document.getElementById('pinOverlay').classList.remove('active');
+      showSettings();
+    } else {
+      document.getElementById('pinError').textContent = 'Incorrect';
+      pinBuffer = '';
+      document.getElementById('pinDisplay').textContent = '____';
+    }
+  }
+
+  function showSettings() {
+    clearTimeout(slideTimer);
+    cancelAnimationFrame(ringTimer);
+    document.getElementById('urlHub').value     = localStorage.getItem('rot_url_hub')     || '';
+    document.getElementById('urlAtm').value     = localStorage.getItem('rot_url_atm')     || '';
+    document.getElementById('urlBalance').value = localStorage.getItem('rot_url_balance')  || '';
+    document.getElementById('durHub').value     = localStorage.getItem('rot_dur_hub')     || 30;
+    document.getElementById('durAtm').value     = localStorage.getItem('rot_dur_atm')     || 30;
+    document.getElementById('durBalance').value = localStorage.getItem('rot_dur_balance')  || 30;
+    document.getElementById('settingsOverlay').classList.add('active');
+  }
+
+  function closeSettings() {
+    document.getElementById('settingsOverlay').classList.remove('active');
+  }
+
+  function saveSettings() {
+    var urlHub     = document.getElementById('urlHub').value.trim();
+    var urlAtm     = document.getElementById('urlAtm').value.trim();
+    var urlBalance = document.getElementById('urlBalance').value.trim();
+    var durHub     = parseInt(document.getElementById('durHub').value)     || 30;
+    var durAtm     = parseInt(document.getElementById('durAtm').value)     || 30;
+    var durBalance = parseInt(document.getElementById('durBalance').value) || 30;
+
+    localStorage.setItem('rot_url_hub',     urlHub);
+    localStorage.setItem('rot_url_atm',     urlAtm);
+    localStorage.setItem('rot_url_balance', urlBalance);
+    localStorage.setItem('rot_dur_hub',     durHub);
+    localStorage.setItem('rot_dur_atm',     durAtm);
+    localStorage.setItem('rot_dur_balance', durBalance);
+
+    // Apply
+    SLIDES[0].url = urlHub;     SLIDES[0].dur = durHub;
+    SLIDES[1].url = urlAtm;     SLIDES[1].dur = durAtm;
+    SLIDES[2].url = urlBalance; SLIDES[2].dur = durBalance;
+
+    if (urlHub)     document.getElementById('frame-hub').src     = urlHub;
+    if (urlAtm)     document.getElementById('frame-atm').src     = urlAtm;
+    if (urlBalance) document.getElementById('frame-balance').src = urlBalance;
+
+    closeSettings();
+    current = 0;
+    goTo(0);
+  }
+</script>
+</body>
+</html>
