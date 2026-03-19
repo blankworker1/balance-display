@@ -41,7 +41,7 @@ on the device. Open `balance-rotator.html` in Chrome via `file:///sdcard/Downloa
 
 ## Hardware
 
-The system is designed to run on a single **42" Android display screen** mounted in portrait orientation (1080Ã—1920). All four files are optimised for this aspect ratio â€” the hub display uses a locked 9:16 canvas, and font sizes across all screens use viewport-relative units scaled for a 1080px-wide portrait display.
+The system is designed to run on a single **42" Android display screen** mounted in portrait orientation (1080x1920). All four files are optimised for this aspect ratio â€” the hub display uses a locked 9:16 canvas, and font sizes across all screens use viewport-relative units scaled for a 1080px-wide portrait display.
 
 Open `balance-rotator.html` in **Chrome for Android** directly from local storage. For a clean exhibition presentation, use Chrome's Add to Home Screen feature to launch the rotator as a standalone fullscreen app with no browser chrome visible. If the screen reboots, the home screen shortcut restores the display in one tap.
 
